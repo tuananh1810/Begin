@@ -18,24 +18,26 @@ class OrderList(APIView):
         return Response(serializer.data)
 
     def post(self, request, format=None):
-        order_input = request.data.get("order") 
+        order_input = request.data.get("order")  # dict
         order_item_input = request.data.get("orderitem")
+        # order_input["user_created"] = user.id
+        # order_input["user_updated"] = user.id
 
-        serilizer = OrdersSerializer(data=order_input)
+        serilizer = OrdersSerializer(data=order_input, context={"user": request.user, "name": "hao nguyen"}) #contex này để truyền tham số bên ngoài vào serializer
 
         if not serilizer.is_valid():
-            return Response(serilizer.errors, status=status.HTTP_400_BAD_REQUEST)
-        order_instance = serilizer.save()  
-        order_id = order_instance.id
+            return Response("fail", 400)
+        order_instance = serilizer.save()  # tạo bản ghi order
+        # order_id = order_instance.id
 
-        for item in order_item_input:
-            item["order"] = order_id
-            serializer_orderitem = OrderdetailsSerializer(data=item)
-            if not serializer_orderitem.is_valid():
-                return Response(serializer_orderitem.errors, status=status.HTTP_400_BAD_REQUEST)
-            serializer_orderitem.save()
+        # for item in order_item_input:
+        #     item["order"] = order_id
+        serializer_orderitem = OrderdetailsSerializer(data=item, context={"order": request.user})
+        if not serializer_orderitem.is_valid():
+            return Response("fail", 400)
+        serializer_orderitem.save()
 
-        return Response(serilizer.data, status=status.HTTP_201_CREATED)
+        return Response(convert_response("Success", 200, {"order_id": order_id}))
 
 class OrderDetail(APIView):
     """

@@ -34,4 +34,3 @@ class LoginAPI(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-#lkfhklsdhosfhi0degfhkdfvndigfhe0pifhpqiofh0pqhfrp-ơ9q3ofr3heq
