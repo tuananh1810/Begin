@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from handle import Paginate
 
 
 
@@ -19,6 +20,10 @@ class ProductList(APIView):
 
     def get(self, request, format=None):
         products = Products.objects.all()
+        search = request.query_params.get("search")
+        if search:
+            products = products.filter(product_name__icontains=search) #icontains: ký tự search nằm trong product_name(so sánh ==)
+        products = Paginate(products, request.GET)
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
 
@@ -71,30 +76,30 @@ class ProductSupplierCategoryCreate(APIView):
         product_input = request.data.get("product") 
         category_input = request.data.get("category")
         supplier_input = request.data.get("supplier")
-        product_input["user_created"] = user.id
-        category_input["user_created"] = user.id
-        supplier_input["user_created"] = user.id
+        # product_input["user_created"] = user.id
+        # category_input["user_created"] = user.id
+        # supplier_input["user_created"] = user.id
 
-        product_input["user_updated"] = user.id
-        category_input["user_updated"] = user.id
-        supplier_input["user_updated"] = user.id        
+        # product_input["user_updated"] = user.id
+        # category_input["user_updated"] = user.id
+        # supplier_input["user_updated"] = user.id        
         print(product_input)
         print(category_input)
         print(supplier_input)
         if not product_input or not category_input or not supplier_input: #nếu trong padload ko tồn tại 3 t.tin -> lỗi 
             return Response("lỗi",  status=status.HTTP_400_BAD_REQUEST)
-        category_serializer = CategorySerializer(data=category_input)
+        category_serializer = CategorySerializer(data=category_input, context={"user": request.user})
         if not category_serializer.is_valid():
             return Response(category_serializer.errors,  status=status.HTTP_400_BAD_REQUEST)
-        supplier_serializer = SupplierSerializer(data=supplier_input)
+        supplier_serializer = SupplierSerializer(data=supplier_input, context={"user2": request.user})
         if not supplier_serializer.is_valid():
             return Response(supplier_serializer.errors,  status=status.HTTP_400_BAD_REQUEST)
         category_instance = category_serializer.save()
         supplier_instance = supplier_serializer.save()
         # print("Suplier ==", supplier_instance)
-        product_input["category"] = category_instance.id
-        product_input["supplier"] = supplier_instance.id
-        product_serializer = ProductSerializer(data=product_input)
+        # product_input["category"] = category_instance.id
+        # product_input["supplier"] = supplier_instance.id
+        product_serializer = ProductSerializer(data=product_input, context={"user3": request.user, "category_instance": category_instance, "supplier_instance": supplier_instance})
         if not product_serializer.is_valid():
             return Response(product_serializer.errors,  status=status.HTTP_400_BAD_REQUEST)
         product_instance = product_serializer.save()

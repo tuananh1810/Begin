@@ -32,3 +32,5 @@ class LoginAPI(APIView):
                 # "email": users.email
             })
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+

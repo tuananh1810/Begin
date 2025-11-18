@@ -34,8 +34,14 @@ class OrdersSerializer(serializers.ModelSerializer):
             'code', 
             'employee_name', 
             'total',
+            'user_created',
+            'user_updated',
 
         )
+    def create(self, validated_data):
+        user = self.contex["order"]
+        name = self.contex["order"]
+        return super().create(validated_data) 
 
 
 
