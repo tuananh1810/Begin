@@ -2,6 +2,8 @@ from django.shortcuts import render
 from products.models import Categories
 from products.serializers import CategorySerializer
 from django.http import Http404
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -53,3 +55,11 @@ class CategoryDetail(APIView):
         categories = self.get_object(pk)
         categories.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class CategoryListView(APIView):
+    queryset = Categories.objects.all()
+    serializer_class = CategorySerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+
+    filterset_fields = ['user_created']
+    search_fields = ['category_name']

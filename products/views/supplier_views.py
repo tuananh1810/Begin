@@ -2,6 +2,8 @@ from django.shortcuts import render
 from products.models import Suppliers
 from products.serializers import SupplierSerializer
 from django.http import Http404
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -52,3 +54,12 @@ class SpplierDetail(APIView):
         Suppliers = self.get_object(pk)
         Suppliers.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class SupplierListView(APIView):
+    queryset = Suppliers.objects.all()
+    serializer_class = SupplierSerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    # Lọc theo user_created
+    filterset_fields = ['user_created']
+    # Tìm kiếm
+    search_fields = ['supplier_name', 'contact_name', 'phone']

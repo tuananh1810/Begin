@@ -3,6 +3,7 @@ from products.models import Products, Categories
 from products.serializers import ProductSerializer
 from django.http import Http404
 from products.serializers import ProductSerializer, CategorySerializer, SupplierSerializer
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -104,3 +105,9 @@ class ProductSupplierCategoryCreate(APIView):
             return Response(product_serializer.errors,  status=status.HTTP_400_BAD_REQUEST)
         product_instance = product_serializer.save()
         return Response(product_serializer.data, status=status.HTTP_201_CREATED)
+    
+class ProductListView(APIView):
+    queryset = Products.objects.all()
+    serializer_class = ProductSerializer 
+    filter_backends = [DjangoFilterBackend] # bộ lọc (filter backend) lọc dữ liệu trong API bằng query parameters
+    filterset_fields = ['category', 'supplier']

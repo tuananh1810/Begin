@@ -10,5 +10,8 @@ urlpatterns = [
     path("api/products", product_views.ProductList.as_view()),
     path("api/products/<int:pk>", product_views.ProductDetail.as_view()),
     path("api/product-supplier-category-create/", product_views.ProductSupplierCategoryCreate.as_view()),
+    path("products/", product_views.ProductListView.as_view()),
+    path("suppliers/", supplier_views.SupplierListView.as_view()),
+    path("categories/", category_views.CategoryListView.as_view()),
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)
