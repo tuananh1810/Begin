@@ -60,6 +60,5 @@ class CategoryListView(APIView):
     queryset = Categories.objects.all()
     serializer_class = CategorySerializer
     filter_backends = [DjangoFilterBackend, SearchFilter]
-
     filterset_fields = ['user_created']
     search_fields = ['category_name']

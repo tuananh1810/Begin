@@ -16,6 +16,18 @@ class SupplierList(APIView):
 
     def get(self, request, format=None):
         suppliers = Suppliers.objects.all()
+        search = request.query_params.get("search")
+        if search: 
+            suppliers = suppliers.filter(supplier_name__icontains=search)
+        postal_code = request.query_params.get("post_code")
+        if postal_code:
+            suppliers = suppliers.filter(postal_code=postal_code)
+        
+        user_created = request.query_params.get("user_cre")
+        if user_created:
+            suppliers = suppliers.filter(user_created=user_created)
+
+        
         serializer = SupplierSerializer(suppliers, many=True)
         return Response(serializer.data)
 

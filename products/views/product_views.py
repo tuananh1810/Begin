@@ -22,8 +22,26 @@ class ProductList(APIView):
     def get(self, request, format=None):
         products = Products.objects.all()
         search = request.query_params.get("search")
+        
         if search:
             products = products.filter(product_name__icontains=search) #icontains: ký tự search nằm trong product_name(so sánh ==)
+        category_id = request.query_params.get("category")  # trả về 10 / None
+        if category_id:
+            # #TH1 L si sánh theo đối tượng category
+            # # category filter id (id là giá trị tuyệt đối)
+            # category_instance = Categories.objects.get(id=category_id)
+            # # Không thể so sánh 1 đối tượng với 1 trường id
+            # products = products.filter(category=category_id)
+            
+            #TH2: So sánh theo id
+            products = products.filter(category_id=category_id)
+
+        supplier_id = request.query_params.get("supplier")
+        if supplier_id:
+            products = products.filter(supplier_id=supplier_id)
+        
+        
+
         products = Paginate(products, request.GET)
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
