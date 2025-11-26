@@ -28,3 +28,8 @@ class LoginSerializer(serializers.Serializer):
             return user
         raise serializers.ValidationError("Sai tài khoản hoặc mật khẩu")
 
+class AccountSerializerView(serializers.ModelSerializer):
+    class Meta:
+        model = Account
+        fields = ["email", "username", "date_joined", "is_active", "is_staff","objects"]
+

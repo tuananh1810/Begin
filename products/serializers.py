@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from products.models import *
+from account.serializers import *
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -16,7 +17,8 @@ class CategorySerializer(serializers.ModelSerializer):
 class SupplierSerializer(serializers.ModelSerializer):
     class Meta:
         model = Suppliers
-        fields = ["id", "supplier_name", "contact_name", "address", "city", "postal_code", "country", "phone","user_created", "user_updated"]
+        fields = ["id", "supplier_name", "contact_name", "address", "city", "postal_code", 
+                  "country", "phone","user_created", "user_updated"]
     def create(self, validated_data):
         user = self.context["user2"]
         validated_data["user_created"] = user
@@ -26,9 +28,14 @@ class SupplierSerializer(serializers.ModelSerializer):
         validated_data["user_updated"] = user
 
 class ProductSerializer(serializers.ModelSerializer):
+    category_data = CategorySerializer(source="category", read_only=True)
+    supplier_data = SupplierSerializer(source="supplier", read_only =True)
+    user_created_data = AccountSerializerView(source="user_created", read_only =True)
     class Meta:
         model = Products
-        fields = ["id", "supplier", "category", "product_name", "unit", "price", "user_created", "user_updated"]
+        fields = ["id", "supplier", "category", "product_name", "unit",
+                   "price", "user_created", "user_updated","category_data","supplier_data",
+                  "user_created_data",]
     def create(self, validated_data):
         user = self.context["user3"]
         category_instance = self.context["category_instance"] #2 cái là 2 trường cần truyền vào để tạo
