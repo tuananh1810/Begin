@@ -5,4 +5,5 @@ from orders import views
 urlpatterns = [
     path("api/orders", views.OrderList.as_view()),
     path("api/orders/<int:pk>", views.OrderDetail.as_view()),
+    path("api/orders/revenue", views.OrderRevenue.as_view()),
 ]

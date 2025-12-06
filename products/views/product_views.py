@@ -3,6 +3,10 @@ from products.models import Products, Categories
 from products.serializers import ProductSerializer
 from django.http import Http404
 from products.serializers import ProductSerializer, CategorySerializer, SupplierSerializer
+from django.db.models import F, Sum, Count, Min, Max, Avg
+from orders.models import Orders
+from customers.models import Customers
+from general import convert_response
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -20,7 +24,14 @@ class ProductList(APIView):
     """
 
     def get(self, request, format=None):
-        products = Products.objects.all()
+        #tính toàn MỖI sản phẩm có bao nhiêu đơn hành được bán *(mỗi/từng -> group by)
+        
+        products = Products.objects.select_related("supplier","category","user_created").annotate( 
+            total_order=Count('orderdetails__order', distinct=True),
+            total_customer = Count('orderdetails__order__customer', distinct=True)
+        )
+        
+        
         search = request.query_params.get("search")
         
         if search:
@@ -124,8 +135,87 @@ class ProductSupplierCategoryCreate(APIView):
         product_instance = product_serializer.save()
         return Response(product_serializer.data, status=status.HTTP_201_CREATED)
     
-class ProductListView(APIView):
-    queryset = Products.objects.all()
-    serializer_class = ProductSerializer 
-    filter_backends = [DjangoFilterBackend] # bộ lọc (filter backend) lọc dữ liệu trong API bằng query parameters
-    filterset_fields = ['category', 'supplier']
+class ReportStatistics(APIView):
+    def get(self, request):
+        result = {
+            "total_product_quantity": self.total_product_quantity(),
+            "product_price_range": self.product_price_range(),
+            "total_revenue": self.total_revenue(),
+            "avg_price_by_category": self.avg_price_by_category(),
+            "total_customers": self.total_customers(),
+        }
+        return Response(convert_response
+                        (message="success", 
+                         status_code=200, 
+                         data=result))
+
+    # 1) Tổng số lượng sản phẩm trong hệ thống
+    def total_product_quantity(self):
+        data = Products.objects.aggregate(
+            total_quantity=Count("id")
+        )
+        print(data)
+        return data["total_quantity"]
+    # 2) Giá cao nhất & thấp nhất của sản phẩm
+    def product_price_range(self):
+        data = Products.objects.aggregate(
+            max_price=Max("price"),
+            min_price=Min("price")
+        )
+        return data
+    # 3) Tổng doanh thu của tất cả đơn hàng
+    def total_revenue(self):
+        data = Orders.objects.aggregate(
+            revenue=Sum("total")
+        )
+        return data["revenue"]
+
+    # 4) Trung bình giá sản phẩm theo từng category
+    def avg_price_by_category(self):
+        data = Categories.objects.annotate(
+            avg_price=Avg("products__price")
+        ).values(
+            "id", "category_name", "avg_price"
+        )
+        return list(data)
+
+    # 5) Tổng số lượng khách hàng
+    def total_customers(self):
+        data = Customers.objects.aggregate(
+            total_customer=Count("id")
+        )
+        return data["total_customer"]
+    
+# 10. Tổng số lượng sản phẩm đã bán cho từng sản phẩm
+class ProductSalesCount(APIView):
+
+    def get(self, request):
+        data = Products.objects.annotate(
+            total_sales=Sum("orderdetails__quantity")
+        ).values("id", "name", "total_sales")
+        return convert_response({"ProductSalesCount": list(data)}, status_code=200)
+
+# 11. Tổng tiền đã bán theo từng sản phẩm
+class ProductTotalRevenue(APIView):
+
+    def get(self, request):
+        data = Products.objects.annotate(
+            total_revenue=Sum(
+                F("orderdetails__quantity") * F("orderdetails__unitprice") - F("orderdetails__discount")
+            )
+        ).values("id", "name", "total_revenue")
+
+        return convert_response({"ProductTotalRevenue": list(data)}, status_code=200)
+
+# 12. Lấy sản phẩm bán chạy nhất
+class ProductBestSeller(APIView):
+
+    def get(self, request):
+        data = Products.objects.annotate(
+            total_sales=Sum("orderdetails__quantity")
+        ).values("id", "name", "total_sales").order_by("-total_sales")[:1]
+
+        return convert_response({"ProductBestSeller": list(data)}, status_code=200)
+
+# 17. Top 5 sản phẩm tạo doanh thu cao nhất
+

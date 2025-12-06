@@ -3,6 +3,9 @@ from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from general import convert_response
+from account.models import *
+from django.db.models import Sum, Count, F
 from .models import Orders, Orderdetails 
 from orders.serializers import OrdersSerializer, OrderdetailsSerializer 
 
@@ -13,9 +16,20 @@ class OrderList(APIView):
     """
 
     def get(self, request, format=None):
+        total_revenue = Orders.objects.aggregate(
+            total_revenue=Sum('total'),
+            total_order = Count("id")
+        )
+
+
         orders = Orders.objects.all()
         serializer = OrdersSerializer(orders, many=True)
-        return Response(serializer.data)
+        return Response(convert_response
+                        (message="success", 
+                         status_code=200, 
+                         data=serializer.data,
+                         bonus=total_revenue))
+    
 
     def post(self, request, format=None):
         order_input = request.data.get("order")  # dict
@@ -68,3 +82,14 @@ class OrderDetail(APIView):
         order.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+#7. Tổng doanh thu theo mỗi đơn hàng
+class OrderRevenue(APIView):
+
+    def get(self, request):
+        data = Orders.objects.annotate(
+            revenue=Sum(
+                F("orderdetails__quantity") * F("orderdetails__unitprice") - F("orderdetails__discount")
+            )
+        ).values("id", "code", "revenue")
+
+        return convert_response({"OrderRevenue": list(data)}, status_code=200)

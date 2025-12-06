@@ -2,6 +2,8 @@ from django.shortcuts import render
 from products.models import Categories
 from products.serializers import CategorySerializer
 from django.http import Http404
+from django.db.models import F, Sum, Count, Min, Max, Avg
+from general import convert_response
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 from rest_framework.views import APIView
@@ -62,3 +64,15 @@ class CategoryListView(APIView):
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ['user_created']
     search_fields = ['category_name']
+
+# 6. Đếm số lượng sản phẩm trong mỗi Category
+class CategoryCount(APIView):
+
+    def get(self, request):
+        data = Categories.objects.annotate(
+            total_product=Count("products")
+        ).values("id", "category_name", "total_product")
+        return convert_response({"CategoryCount": list(data)}, status_code=200)
+
+# 16. Tìm category mang lại doanh thu cao nhất
+

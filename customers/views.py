@@ -2,6 +2,9 @@ from django.shortcuts import render
 from customers.models import Customers
 from customers.serializers import CustomerSerializer
 from django.http import Http404
+from account.models import *
+from django.db.models import Sum, Count, F
+from general import convert_response
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -53,3 +56,20 @@ class CustomerDetail(APIView):
         customers.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+# 8. Khách hàng đã mua bao nhiêu đơn hàng
+class CustomerOrderCount(APIView):
+
+    def get(self, request):
+        data = Customers.objects.annotate(
+            total_orders=Count("orders")
+        ).values("id", "name", "total_orders")
+        return convert_response({"CustomerOrderCount": list(data)}, status_code=200)
+
+# 9. Khách hàng đã tiêu bao nhiêu tiền
+class CustomerTotalSpent(APIView):
+
+    def get(self, request):
+        data = Customers.objects.annotate(
+            total_spent=Sum("orders__total")
+        ).values("id", "name", "total_spent")
+        return convert_response({"CustomerTotalSpent": list(data)}, status_code=200)

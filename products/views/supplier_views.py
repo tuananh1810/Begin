@@ -75,3 +75,24 @@ class SupplierListView(APIView):
     filterset_fields = ['user_created']
     # Tìm kiếm
     search_fields = ['supplier_name', 'contact_name', 'phone']
+
+# 13. Tổng số lượng sản phẩm mà mỗi Supplier cung cấp
+class SupplierProductCount(APIView):
+
+    def get(self, request):
+        data = Suppliers.objects.annotate(
+            total_products=Count("products")
+        ).values("id", "supplier_name", "total_products")
+        return convert_response({"SupplierProductCount": list(data)}, status_code=200)
+
+# 14. Doanh thu theo mỗi Supplier
+class SupplierTotalRevenue(APIView):
+
+    def get(self, request):
+        data = Suppliers.objects.annotate(
+            total_revenue=Sum(
+                F("products__orderdetails__quantity") * F("products__orderdetails__unitprice") - F("products__orderdetails__discount")
+            )
+        ).values("id", "supplier_name", "total_revenue")
+
+        return convert_response({"SupplierTotalRevenue": list(data)}, status_code=200)

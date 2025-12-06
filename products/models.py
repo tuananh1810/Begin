@@ -31,5 +31,6 @@ class Products(models.Model):
     price = models.FloatField(default=10.2)
     user_created = models.ForeignKey(Account, on_delete=models.CASCADE, blank=True, null=True, related_name="cre_product")
     user_updated = models.ForeignKey(Account, on_delete=models.CASCADE, blank=True, null=True, related_name="upd_product")
+    product_code = models.CharField(max_length=50, blank=True, null=True)
     def __str__(self):
         return self.product_name
