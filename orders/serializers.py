@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Orders, Orderdetails, Shippers 
 from customers.models import Customers 
 from products.models import Products 
+from django.db.models import Count, Sum
 
 
 
@@ -55,3 +56,10 @@ class OrderAdminSerializer(serializers.ModelSerializer):
         model = Orders
         fields = ('customer', 'shipper', 'order_date', 'code', 'employee_name')
         
+# số lượng khách hàng trên từng đơn hàng của bảng order
+# dùng hàm cout đề đếm số lượng khách hàng của tất cả các bản ghi trong đơn hàng
+# tính tổng doanh thu của đơn hàng
+# trong api danh sách sp, total customer, total count
+
+
+

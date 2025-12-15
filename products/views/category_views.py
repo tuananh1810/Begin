@@ -2,6 +2,10 @@ from django.shortcuts import render
 from products.models import Categories
 from products.serializers import CategorySerializer
 from django.http import Http404
+from django.db.models import F, Sum, Count, Min, Max, Avg
+from general import convert_response
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -53,3 +57,32 @@ class CategoryDetail(APIView):
         categories = self.get_object(pk)
         categories.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class CategoryListView(APIView):
+    queryset = Categories.objects.all()
+    serializer_class = CategorySerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['user_created']
+    search_fields = ['category_name']
+
+# 6. Đếm số lượng sản phẩm trong mỗi Category
+class CategoryCount(APIView):
+
+    def get(self, request):
+        data = Categories.objects.annotate(
+            total_product=Count("products")
+        ).values("id", "category_name", "total_product")
+        return convert_response({"CategoryCount": list(data)}, status_code=200)
+
+# 16. Tìm category mang lại doanh thu cao nhất
+#tính doanh thu theo category
+#order by theo doanh thu từ lớn đến bé, lấy cái đầu tiên -> doanh thu lớn nhất
+class CategoryWithHighestRevenue(APIView):
+
+    def get(self, request):
+        data = Categories.objects.annotate(
+            total_revenue=Sum('products__price')
+        ).order_by('-total_revenue').values('id', 'category_name', 'total_revenue').first()
+        return Response(convert_response({"CategoryWithHighestRevenue": data}, status_code=200))
+
+

@@ -2,6 +2,9 @@ from django.shortcuts import render
 from products.models import Suppliers
 from products.serializers import SupplierSerializer
 from django.http import Http404
+from general import convert_response
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -14,6 +17,18 @@ class SupplierList(APIView):
 
     def get(self, request, format=None):
         suppliers = Suppliers.objects.all()
+        search = request.query_params.get("search")
+        if search: 
+            suppliers = suppliers.filter(supplier_name__icontains=search)
+        postal_code = request.query_params.get("post_code")
+        if postal_code:
+            suppliers = suppliers.filter(postal_code=postal_code)
+        
+        user_created = request.query_params.get("user_cre")
+        if user_created:
+            suppliers = suppliers.filter(user_created=user_created)
+
+        
         serializer = SupplierSerializer(suppliers, many=True)
         return Response(serializer.data)
 
@@ -52,3 +67,33 @@ class SpplierDetail(APIView):
         Suppliers = self.get_object(pk)
         Suppliers.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class SupplierListView(APIView):
+    queryset = Suppliers.objects.all()
+    serializer_class = SupplierSerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    # Lọc theo user_created
+    filterset_fields = ['user_created']
+    # Tìm kiếm
+    search_fields = ['supplier_name', 'contact_name', 'phone']
+
+# 13. Tổng số lượng sản phẩm mà mỗi Supplier cung cấp
+class SupplierProductCount(APIView):
+
+    def get(self, request):
+        data = Suppliers.objects.annotate(
+            total_products=Count("products")
+        ).values("id", "supplier_name", "total_products")
+        return Response(convert_response({"SupplierProductCount": list(data)}, status_code=200)) 
+
+# 14. Doanh thu theo mỗi Supplier
+class SupplierTotalRevenue(APIView):
+
+    def get(self, request):
+        data = Suppliers.objects.annotate(
+            total_revenue=Sum(
+                F("products__orderdetails__quantity") * F("products__orderdetails__unitprice") - F("products__orderdetails__discount")
+            )
+        ).values("id", "supplier_name", "total_revenue")
+
+        return Response(convert_response({"SupplierTotalRevenue": list(data)}, status_code=200))
