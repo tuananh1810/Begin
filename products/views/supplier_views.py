@@ -2,6 +2,7 @@ from django.shortcuts import render
 from products.models import Suppliers
 from products.serializers import SupplierSerializer
 from django.http import Http404
+from general import convert_response
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter
 from rest_framework.views import APIView
@@ -83,7 +84,7 @@ class SupplierProductCount(APIView):
         data = Suppliers.objects.annotate(
             total_products=Count("products")
         ).values("id", "supplier_name", "total_products")
-        return convert_response({"SupplierProductCount": list(data)}, status_code=200)
+        return Response(convert_response({"SupplierProductCount": list(data)}, status_code=200)) 
 
 # 14. Doanh thu theo mỗi Supplier
 class SupplierTotalRevenue(APIView):
@@ -95,4 +96,4 @@ class SupplierTotalRevenue(APIView):
             )
         ).values("id", "supplier_name", "total_revenue")
 
-        return convert_response({"SupplierTotalRevenue": list(data)}, status_code=200)
+        return Response(convert_response({"SupplierTotalRevenue": list(data)}, status_code=200))

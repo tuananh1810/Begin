@@ -65,6 +65,12 @@ class AccountSerializerView(serializers.ModelSerializer):
     def get_count_customer(self, instance):
         return Customers.objects.filter(user_created=instance).count()
 
+class StaffSerializer(serializers.ModelSerializer):
+    class Meta: 
+        model = Account
+        field = "__all__"
+
+
 
     
     

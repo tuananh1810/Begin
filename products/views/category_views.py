@@ -75,4 +75,14 @@ class CategoryCount(APIView):
         return convert_response({"CategoryCount": list(data)}, status_code=200)
 
 # 16. Tìm category mang lại doanh thu cao nhất
+#tính doanh thu theo category
+#order by theo doanh thu từ lớn đến bé, lấy cái đầu tiên -> doanh thu lớn nhất
+class CategoryWithHighestRevenue(APIView):
+
+    def get(self, request):
+        data = Categories.objects.annotate(
+            total_revenue=Sum('products__price')
+        ).order_by('-total_revenue').values('id', 'category_name', 'total_revenue').first()
+        return Response(convert_response({"CategoryWithHighestRevenue": data}, status_code=200))
+
 

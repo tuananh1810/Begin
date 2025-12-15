@@ -7,6 +7,7 @@ urlpatterns = [
     path("api/customers/<int:pk>", views.CustomerDetail.as_view()),
     path("api/customers/order-count/", views.CustomerOrderCount.as_view()),
     path("api/customers/total-spent/", views.CustomerTotalSpent.as_view()),
+    path("api/customers/stats/", views.CustomerStats.as_view()),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

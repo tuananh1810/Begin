@@ -3,7 +3,7 @@ from products.models import Products, Categories
 from products.serializers import ProductSerializer
 from django.http import Http404
 from products.serializers import ProductSerializer, CategorySerializer, SupplierSerializer
-from django.db.models import F, Sum, Count, Min, Max, Avg
+from django.db.models import F, Sum, Count, Min, Max, Avg, Q
 from orders.models import Orders
 from customers.models import Customers
 from general import convert_response
@@ -193,7 +193,7 @@ class ProductSalesCount(APIView):
         data = Products.objects.annotate(
             total_sales=Sum("orderdetails__quantity")
         ).values("id", "name", "total_sales")
-        return convert_response({"ProductSalesCount": list(data)}, status_code=200)
+        return Response( convert_response({"ProductSalesCount": list(data)}, status_code=200))
 
 # 11. Tổng tiền đã bán theo từng sản phẩm
 class ProductTotalRevenue(APIView):
@@ -205,7 +205,7 @@ class ProductTotalRevenue(APIView):
             )
         ).values("id", "name", "total_revenue")
 
-        return convert_response({"ProductTotalRevenue": list(data)}, status_code=200)
+        return Response(convert_response({"ProductTotalRevenue": list(data)}, status_code=200))
 
 # 12. Lấy sản phẩm bán chạy nhất
 class ProductBestSeller(APIView):
@@ -215,7 +215,36 @@ class ProductBestSeller(APIView):
             total_sales=Sum("orderdetails__quantity")
         ).values("id", "name", "total_sales").order_by("-total_sales")[:1]
 
-        return convert_response({"ProductBestSeller": list(data)}, status_code=200)
+        return Response(convert_response({"ProductBestSeller": data}, status_code=200))
 
 # 17. Top 5 sản phẩm tạo doanh thu cao nhất
+#tính theo sản phẩm, tính daonh thu theo từng sp 
+#sắp xếp theo giảm dần -> lấy 5 data đầu tiên 
+class Top5ProductRevenue(APIView):
+    def get(self, request):
+        data = Products.objects.annotate(
+            total_revenue=Sum(
+                F("orderdetails__quantity") * F("orderdetails__unitprice") - F("orderdetails__discount")
+            )
+        ).values("id", "product_name", "total_revenue").order_by("-total_revenue")[:5]
+        data2 = Products.objects.annotate(
+            total_revenue=Sum(
+                F("orderdetails__quantity") * F("orderdetails__unitprice") - F("orderdetails__discount")
+            )
+        ).filter(total_revenue__gt=50000).values("id", "product_name", "total_revenue")
+        result = {
+            "Top5ProductRevenue": list(data),
+            "ProductOver10m" : list(data2)
+        }
+        return Response(convert_response(result, status_code=200)) 
 
+
+# 18. Lọc các sản phẩm có doanh thu > 10 triệu
+class ProductRevenueOver10M(APIView):
+    def get(self, request):
+        data = Products.objects.annotate(
+            total_revenue=Sum(
+                F("orderdetails__quantity") * F("orderdetails__unitprice") - F("orderdetails__discount")
+            )
+        ).filter(total_revenue__gt=50000).values("id", "product_name", "total_revenue")
+        return Response(convert_response(list(data), status_code=200)) 

@@ -20,6 +20,9 @@ urlpatterns = [
     path("api/products/best-seller/", product_views.ProductBestSeller.as_view()),
     path("api/suppliers/product-count/", supplier_views.SupplierProductCount.as_view()),
     path("api/suppliers/total-revenue/", supplier_views.SupplierTotalRevenue.as_view()),
+    path("api/categories/highest-revenue/", category_views.CategoryWithHighestRevenue.as_view()),
+    path("api/products/top5-revenue/", product_views.Top5ProductRevenue.as_view()),
+    path("api/products/revenue-over-10m/", product_views.ProductRevenueOver10M.as_view()),
 
 ]
 urlpatterns = format_suffix_patterns(urlpatterns)
