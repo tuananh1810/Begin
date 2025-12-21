@@ -38,6 +38,7 @@ class Region(models.Model):
         return self.title
 
 class Account(AbstractUser):
+    address = models.TextField(blank=True, null=True, default=None)
     system = models.ForeignKey(System, on_delete=models.SET_NULL, blank= True, null= True )
     region = models.ForeignKey(Region, on_delete=models.SET_NULL, blank= True, null= True )
     code =  models.CharField(max_length=50, blank= True, null= True, default=None)

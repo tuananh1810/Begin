@@ -35,8 +35,6 @@ class ProductSerializer(serializers.ModelSerializer):
     total_order = serializers.IntegerField(read_only=True)
     total_customer = serializers.IntegerField(read_only=True)
 
-
-
     category_data = CategorySerializer(source="category", read_only=True)
     supplier_data = SupplierSerializer(source="supplier", read_only =True)
     user_created_data = AccountSerializerView(source="user_created", read_only =True)

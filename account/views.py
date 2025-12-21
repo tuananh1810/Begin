@@ -51,21 +51,27 @@ class AccountList(APIView):
         return Response(serializer.data)
 
 class StaffView(APIView):
-    Permission_class = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
+    # Lọc theo trạng thái is_active, mã nhân viên (code), tên nhân viên (full_name), và search giống view trong products
     def get(self, request): 
-        staff_list = Account.objects.filter(system__code = "STAFF") 
-        search = request.query_params.get("search") 
+        staff_list = Account.objects.filter(system__code="STAFF")
+        is_active = request.query_params.get("is_active")
+        # code = request.query_params.get("code")
+        # full_name = request.query_params.get("full_name")
+        search = request.query_params.get("search")
+
+        if is_active is not None:
+            staff_list = staff_list.filter(is_active=is_active in ["true", "True",  "1", "False", "false", "0"]) #truyền active = true hay false đều lọc dc 
         if search:
             staff_list = staff_list.filter(
                 Q(full_name__icontains=search) |
                 Q(phone__icontains=search) |
                 Q(code__icontains=search)
-
             )
         staff_list = Paginate(staff_list, request.GET)
-        serialier = StaffSerializer(staff_list, many=True)
-        
-        return Response(convert_response("Success",200,serialier.data))
+        serializer = StaffSerializer(staff_list, many=True)
+        return Response(convert_response("Success", 200, serializer.data))
+    
     
     def post(self, request):
         user = request.user
@@ -81,7 +87,7 @@ class StaffView(APIView):
         serializer.save()
         return Response(convert_response("Success",200, serializer.data))
     
-# API Nhân viên bổ xung API chi tiết và chỉnh sửa, vô hiệu hóa nhân viên
+# API Nhân viên bổ xung 
 class StaffDetail(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -89,23 +95,45 @@ class StaffDetail(APIView):
         try:
             return Account.objects.get(pk=pk)
         except Account.DoesNotExist:
-            raise Http404
+            return Response(convert_response("Không tìm thấy nhân viên", 404), status=status.HTTP_404_NOT_FOUND)
 
     def get(self, request, pk, format=None):
         staff = self.get_object(pk)
         serializer = StaffSerializer(staff)
-        return Response(serializer.data)
+        return Response(convert_response("Success", 200, serializer.data))
 
     def put(self, request, pk, format=None):
         staff = self.get_object(pk)
-        serializer = StaffSerializer(staff, data=request.data)
+        serializer = StaffSerializer(staff, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(convert_response("Cập nhật thành công", 200, serializer.data))
+        return Response(convert_response("Cập nhật thất bại", 400, serializer.errors), status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk, format=None):
         staff = self.get_object(pk)
         staff.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(convert_response("Xóa thành công", 204), status=status.HTTP_204_NO_CONTENT)
 
+"""
+{
+"is_active": True
+}
+
+"""
+# API  vô hiệu hóa nhân viên
+class UpdateStatusStaff(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request, pk, format=None):
+        is_active = request.data.get("is_active", True)
+        user = request.user
+        if user.system.code != "ADMIN":
+            return Response(convert_response("Bạn không có quyền hạn", 400))
+        try:
+            staff = Account.objects.get(pk=pk, system__code="STAFF")
+        except Account.DoesNotExist:
+            return Response(convert_response("Không tìm thấy nhân viên", 404), status=status.HTTP_404_NOT_FOUND)
+        staff.is_active = is_active
+        staff.save()
+        return Response(convert_response("Thành công", 200))
+        

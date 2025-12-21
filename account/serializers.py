@@ -2,7 +2,8 @@ from rest_framework import serializers
 from django.contrib.auth import authenticate
 from account.models import *
 from orders import *
-from orders.models import Orders
+from django.db.models import Count, Sum
+from orders.models import Orders, Orderdetails
 from customers.models import Customers
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -65,10 +66,28 @@ class AccountSerializerView(serializers.ModelSerializer):
     def get_count_customer(self, instance):
         return Customers.objects.filter(user_created=instance).count()
 
+class RegionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Region
+        fields = "__all__"
+
 class StaffSerializer(serializers.ModelSerializer):
+    region_data = RegionSerializer(source="region", read_only = True)
+    revenua = serializers.SerializerMethodField()
     class Meta: 
         model = Account
-        field = "__all__"
+        fields = ["id","address", "code", "system", "region", "code", "email", "username", "full_name", "phone", "date_joined", "is_active", "is_staff", "user_created", "region_data", "revenua"]
+    def get_revenua(self, obj):
+        # orders = Orders.objects.filter(user_created=obj, status__code ="HT" )
+        # total_all = 0
+        # for order  in orders:
+        #     total_all += order.total
+        # return total_all    
+        orders = Orders.objects.filter(user_created=obj,status__code ="HT").aggregate(total=Sum("total"))
+        return orders["total"] or 0.0  
+
+
+    
 
 
 

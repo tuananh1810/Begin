@@ -1,5 +1,6 @@
 from django.db import models
 from account.models import Account
+from django.utils import timezone
 # Create your models here.
 class Customers(models.Model):
     customer_name = models.CharField(max_length=100)
@@ -14,6 +15,8 @@ class Customers(models.Model):
     code = models.CharField(max_length=50, blank=True, null=True, default=None)
     phone = models.CharField(max_length=20, blank=True, null=True, default=None)
     email = models.EmailField(blank=True, null=True, default=None)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(default=timezone.now)
     type_customer = models.CharField(max_length=100, blank=True, null=True)
     user_created = models.ForeignKey(Account, on_delete=models.CASCADE, blank=True, null=True)
     def __str__(self):
